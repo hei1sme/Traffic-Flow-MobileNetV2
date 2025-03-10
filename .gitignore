@@ -1,1 +1,5 @@
+# Ignore .DATA folder
 .DATA/
+
+# Ignore .vscode folder
+.vscode/
