@@ -3,7 +3,7 @@ import numpy as np
 import os
 import random
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, simpledialog
 
 def adjust_brightness(image, factor):
     return np.clip(image * factor, 0, 255).astype(np.uint8)
@@ -13,11 +13,11 @@ def translate_image(image, tx, ty):
     M = np.float32([[1, 0, tx], [0, 1, ty]])
     return cv2.warpAffine(image, M, (cols, rows))
 
-def augment_images(folder_path, target_count=200):
+def augment_images(folder_path, target_count):
     image_files = [f for f in os.listdir(folder_path) if f.lower().endswith(('jpg', 'png', 'jpeg'))]
     
     if len(image_files) >= target_count:
-        print("Folder already contains at least 200 images. No augmentation needed.")
+        print(f"Folder already contains at least {target_count} images. No augmentation needed.")
         return
     
     while len(image_files) < target_count:
@@ -44,13 +44,20 @@ def augment_images(folder_path, target_count=200):
         image_files.append(new_filename)
         print(f"Generated: {new_filename} ({len(image_files)}/{target_count})")
 
-    print("Data augmentation complete! Folder now contains 200 images.")
+    print(f"Data augmentation complete! Folder now contains {target_count} images.")
 
 if __name__ == "__main__":
     root = tk.Tk()
     root.withdraw()
+    
     folder_selected = filedialog.askdirectory(title="Select Image Folder")
     if folder_selected:
-        augment_images(folder_selected)
+        # Ask user for target count
+        target_count = simpledialog.askinteger("Input", "Enter target number of images:", 
+                                              initialvalue=200, minvalue=1)
+        if target_count:
+            augment_images(folder_selected, target_count)
+        else:
+            print("Invalid target count. Exiting.")
     else:
         print("No folder selected. Exiting.")

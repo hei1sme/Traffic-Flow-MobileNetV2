@@ -11,7 +11,7 @@ from tensorflow.keras.applications import MobileNetV2
 # Define image properties
 IMG_SIZE = (128, 128)
 DATASET_DIR = ".DATA/dataset"
-MODEL_DIR = "model"
+MODEL_DIR = "./model"
 INBOUND_MODEL_PATH = os.path.join(MODEL_DIR, "inbound_classification.keras")
 OUTBOUND_MODEL_PATH = os.path.join(MODEL_DIR, "outbound_classification.keras")
 LABELS_PATH = os.path.join(DATASET_DIR, "labels.csv")

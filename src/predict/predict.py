@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import datetime
+import pytz
 from tensorflow.keras.models import load_model
 
 # Define paths
@@ -30,6 +32,18 @@ outbound_model = load_model(OUTBOUND_MODEL_PATH, custom_objects={'loss': weighte
 # Define cropping coordinates
 INBOUND_CROP = [(445, 286), (80, 0), (510, 0), (510, 283)]
 OUTBOUND_CROP = [(476, 286), (87, 2), (2, 1), (2, 285)]
+
+# Function to convert timestamp in filename to formatted date-time in GMT+7
+def extract_timestamp(filename):
+    try:
+        timestamp_ms = int(filename.split('_')[-1].split('.')[0])
+        timestamp_utc = datetime.datetime.utcfromtimestamp(timestamp_ms / 1000)
+        gmt_plus_7 = pytz.timezone("Asia/Ho_Chi_Minh")
+        timestamp_gmt7 = timestamp_utc.replace(tzinfo=pytz.utc).astimezone(gmt_plus_7)
+        return timestamp_gmt7.strftime("%Y-%m-%d %H:%M:%S")
+    except Exception as e:
+        print(f"Error parsing timestamp from {filename}: {e}")
+        return filename
 
 # Function to crop an image using polygon mask
 def crop_image(img, points):
@@ -58,6 +72,9 @@ for filename in os.listdir(DATASET_DIR):
         print(f"Warning: Could not load image {filename}")
         continue
     
+    # Convert filename to timestamp
+    timestamp = extract_timestamp(filename)
+    
     # Crop inbound and outbound parts
     inbound_img = crop_image(img, INBOUND_CROP)
     outbound_img = crop_image(img, OUTBOUND_CROP)
@@ -71,63 +88,15 @@ for filename in os.listdir(DATASET_DIR):
     outbound_pred = outbound_model.predict(outbound_img_processed)[0]
     
     # Store results
-    predictions.append([filename, *inbound_pred, *outbound_pred])
+    predictions.append([timestamp, *inbound_pred, *outbound_pred])
     
     # Print predictions
-    print(f"{filename} Predictions:")
+    print(f"{timestamp} Predictions:")
     print(f"  Inbound - Low: {inbound_pred[0]:.2f}, Medium: {inbound_pred[1]:.2f}, High: {inbound_pred[2]:.2f}")
     print(f"  Outbound - Low: {outbound_pred[0]:.2f}, Medium: {outbound_pred[1]:.2f}, High: {outbound_pred[2]:.2f}")
-    
-    # Visualization
-    fig, ax = plt.subplots(3, 2, figsize=(10, 12))
-    
-    # Show full image
-    ax[0, 0].imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-    ax[0, 0].set_title(f"Full Image - {filename}")
-    ax[0, 0].axis("off")
-    
-    # Show prediction chart for full image
-    categories = ["Low", "Medium", "High"]
-    x = np.arange(len(categories))
-    width = 0.3
-    
-    ax[0, 1].bar(x - width/2, inbound_pred, width, label="Inbound")
-    ax[0, 1].bar(x + width/2, outbound_pred, width, label="Outbound")
-    ax[0, 1].set_xticks(x)
-    ax[0, 1].set_xticklabels(categories)
-    ax[0, 1].set_ylim(0, 1)
-    ax[0, 1].set_title("Full Image Prediction")
-    ax[0, 1].legend()
-    
-    # Show inbound cropped image
-    ax[1, 0].imshow(cv2.cvtColor(inbound_img, cv2.COLOR_BGR2RGB))
-    ax[1, 0].set_title("Inbound Cropped Image")
-    ax[1, 0].axis("off")
-    
-    # Show inbound prediction chart
-    ax[1, 1].bar(x, inbound_pred, width, color='blue')
-    ax[1, 1].set_xticks(x)
-    ax[1, 1].set_xticklabels(categories)
-    ax[1, 1].set_ylim(0, 1)
-    ax[1, 1].set_title("Inbound Prediction")
-    
-    # Show outbound cropped image
-    ax[2, 0].imshow(cv2.cvtColor(outbound_img, cv2.COLOR_BGR2RGB))
-    ax[2, 0].set_title("Outbound Cropped Image")
-    ax[2, 0].axis("off")
-    
-    # Show outbound prediction chart
-    ax[2, 1].bar(x, outbound_pred, width, color='orange')
-    ax[2, 1].set_xticks(x)
-    ax[2, 1].set_xticklabels(categories)
-    ax[2, 1].set_ylim(0, 1)
-    ax[2, 1].set_title("Outbound Prediction")
-    
-    plt.tight_layout()
-    plt.show()
 
 # Save predictions to CSV
-columns = ["Filename", "low_inbound", "medium_inbound", "high_inbound", "low_outbound", "medium_outbound", "high_outbound"]
+columns = ["Timestamp", "low_inbound", "medium_inbound", "high_inbound", "low_outbound", "medium_outbound", "high_outbound"]
 df = pd.DataFrame(predictions, columns=columns)
 df.to_csv(OUTPUT_CSV, index=False)
 print(f"Predictions saved to {OUTPUT_CSV}")
