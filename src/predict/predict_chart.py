@@ -9,7 +9,7 @@ import pytz
 from tensorflow.keras.models import load_model
 
 # Define paths
-DATASET_DIR = "TESTING_DATASET"  # Change this to your dataset path
+DATASET_DIR = ".DATA\HISTORICAL_RAW_DATA\predict_dataset"  # Change this to your dataset path
 INBOUND_MODEL_PATH = "model/inbound_classification_final.keras"
 OUTBOUND_MODEL_PATH = "model/outbound_classification_final.keras"
 OUTPUT_CSV = "predictions.csv"
@@ -173,7 +173,7 @@ for filename in os.listdir(DATASET_DIR):
     print(f"  Outbound - Low: {outbound_pred[0]:.2f}, Medium: {outbound_pred[1]:.2f}, High: {outbound_pred[2]:.2f}")
     
     # Display charts
-    # display_prediction_charts(img, inbound_img, outbound_img, inbound_pred, outbound_pred, timestamp)
+    display_prediction_charts(img, inbound_img, outbound_img, inbound_pred, outbound_pred, timestamp)
 
 # Save predictions to CSV
 columns = ["Timestamp", "low_inbound", "medium_inbound", "high_inbound", "low_outbound", "medium_outbound", "high_outbound"]
